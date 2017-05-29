@@ -12,32 +12,30 @@
                     
      <mvc:annotation-driven/>
      
-     <context:component-scan base-package="mx.com.amx.unotv.workflow"/>
-     
-     <bean  class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"> 
+     <!-- busca los @Controller en esta ruta -->     
+    <context:component-scan base-package="mx.com.amx.unotv.workflow.controller"/>     
+        
+        
+	<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+		<property name="contentNegotiationManager" ref="cnManager"/>
+	</bean>	
+	<bean id="cnManager" class="org.springframework.web.accept.ContentNegotiationManagerFactoryBean">
+        <property name="ignoreAcceptHeader" value="true"/>        
+        <property name="defaultContentType" value="application/json" />
+        <property name="mediaTypes">
+			<map>
+				<entry key="json" value="application/json"/>
+				<entry key="html" value="text/html"/>
+			</map>
+		</property>
+    </bean>
+		
+	
+	<bean  class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"> 
 		<property name="location">
 			<value>classpath:general.properties</value>
 		</property>
 	</bean>
-     
-    <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
-    	<property name="order" value="1" />     
-  		<property name="mediaTypes">
-			<map>
-		    	<entry key="json" value="application/json"/>	
-		      	<entry key="html" value="text/html"/>      
-		    </map>
-  		</property>  
-	  	<property name="defaultViews">
-	    	<list>
-	      		<bean class="org.springframework.web.servlet.view.json.MappingJacksonJsonView">
-	        		<property name="prefixJson" value="true"/>
-	      		</bean>
-	    	</list>
-	  	</property>
-	  	<property name="ignoreAcceptHeader" value="true" />	   
-	</bean>
-	
 	
 	<!-- log4j setting -->
     <bean id="log4jInitialization" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
