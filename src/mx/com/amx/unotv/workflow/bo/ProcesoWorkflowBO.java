@@ -19,7 +19,7 @@ public class ProcesoWorkflowBO {
 		LOG.debug("Inicia procesoWorkflow");
 		try {
 			
-			
+			LOG.debug("Test");
 			
 		} catch (Exception e) {
 			LOG.error("Exception en procesoWorkflow");
