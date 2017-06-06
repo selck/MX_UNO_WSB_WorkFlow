@@ -60,7 +60,6 @@ public class UtilWorkFlow {
 			parametrosDTO.setBaseURL(props.getProperty("baseURL"));
 			
 			parametrosDTO.setBasePagesPortal(props.getProperty("basePagesPortal"));	
-			parametrosDTO.setBaseNoticiasComscore(props.getProperty("baseNoticiasComscore"));		
 			parametrosDTO.setPathDetalle(props.getProperty("pathDetalle"));
 			parametrosDTO.setDominio(props.getProperty("dominio"));
 			parametrosDTO.setAmbiente(props.getProperty("ambiente"));
@@ -271,36 +270,7 @@ public class UtilWorkFlow {
 			        	
 			        }
 			    } 
-			}
-			try {
-				StringBuffer widget=new StringBuffer();
-				widget.append(" <div class=\"widget-eua\">\n");
-				widget.append(" <script type=\"text/javascript\" src=\"https://dujy1obvgbkk2.cloudfront.net/widgets/index.js\" data-showtbox-include data-widget-type=\"us_election\" data-height=\"300px\" data-width=\"300px\" data-widget-country=\"MX\" data-widget-lang=\"ES\" data-partner-id=\"b982ecc6-af9d-4b94-a073-fc40d15ce9e0\" data-fullscreen-link=\"https://www.showt.com/us-election/ES\"></script>\n");
-				widget.append(" </div>\n");
-				RTFContenido = RTFContenido.replace("[widget-elecciones-eeuu]", widget.toString());
-			} catch (Exception e) {
-				RTFContenido = RTFContenido.replace("[widget-elecciones-eeuu]", "");
-				logger.error("Error al sustituir [widget-elecciones-eeuu]");
-			}
-			
-			try {
-				StringBuffer widget=new StringBuffer();
-				widget.append(" <div class=\"mapa-elecciones\">\n");
-				widget.append(" 	<div class=\"counter-elecciones\">\n");
-				widget.append(" 	  <p>Clinton</p>\n");
-				widget.append(" 	  <p>Tendencia Clinton</p>\n");
-				widget.append(" 	  <p>No decidido</p>\n");
-				widget.append(" 	  <p>Tendencia Trump</p>\n");
-				widget.append(" 	  <p>Trump</p>\n");
-				widget.append(" 	</div>\n");
-				widget.append(" 	<div id=\"mapa-elecciones\"></div>\n");
-				widget.append(" 	<script type=\"text/javascript\" src=\"https://maps.googleapis.com/maps/api/js?key=AIzaSyDomk2vz2UiyFZNxaW80hOueCie6qgIed8&amp;language=es\"></script>\n");
-				widget.append(" </div>\n");
-				RTFContenido = RTFContenido.replace("[mapa-elecciones-eeuu]", widget.toString());
-			} catch (Exception e) {
-				RTFContenido = RTFContenido.replace("[mapa-elecciones-eeuu]", "");
-				logger.error("Error al sustituir [mapa-elecciones-eeuu]");
-			}
+			}		
 			return RTFContenido;
 		} catch (Exception e) {
 			logger.error("Error getEmbedPost: ",e);
