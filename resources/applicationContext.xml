@@ -13,7 +13,7 @@
      <mvc:annotation-driven/>
      
      <!-- busca los @Controller en esta ruta -->     
-    <context:component-scan base-package="mx.com.amx.unotv.workflow.controller"/>     
+    <context:component-scan base-package="mx.com.amx.unotv.workflow"/>     
         
         
 	<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">

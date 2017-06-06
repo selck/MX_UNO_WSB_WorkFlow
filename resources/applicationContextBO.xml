@@ -9,6 +9,11 @@
 		
 	<context:annotation-config/>
 	
-	<bean id="procesoBO" class="mx.com.amx.unotv.workflow.bo.ProcesoWorkflowBO"></bean>
+	<bean id="procesoWorkflowBO" class="mx.com.amx.unotv.workflow.bo.ProcesoWorkflowBO"></bean>
+	
+	
+	
+	
+	
 		
 </beans>
