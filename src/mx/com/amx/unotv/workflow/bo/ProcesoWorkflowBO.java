@@ -42,76 +42,10 @@ public class ProcesoWorkflowBO {
 	}
 	
 	/**
-	 * Método que es utilizado para el proceso de caducación de una nota del portal de UNOTV,
-	 * se elimina nota de la base de datos y de Facebook Instant Articles
-	 * @param ContentDTO contentDTO
-	 * @return Boolean
-	 * @throws LlamadasWSDAOException, LlamadasWSBOException, ProcesoWorkflowException
-	 * @author jesus
-	 * */
-	public Boolean caducarNota(ContentDTO contentDTO) throws ProcesoWorkflowException{
-		
-		boolean success=false;
-		try {
-			ParametrosDTO parametrosDTO=UtilWorkFlow.obtenerPropiedades("ambiente.resources.properties");
-			LlamadasWSDAO LlamadasWSDAO=new LlamadasWSDAO(parametrosDTO.getURL_WS_DATOS());
-			LlamadasWSBO llamadasWSBO=new LlamadasWSBO(parametrosDTO.getURL_WS_FB()); //kaka
-
-			if(contentDTO.getFcTagsApp() != null && contentDTO.getFcTagsApp().length>0){
-				success = LlamadasWSDAO.deleteTagsApp(contentDTO);
-			}
-			success = LlamadasWSDAO.deleteNotaBD(contentDTO);
-			success = LlamadasWSDAO.deleteNotaHistoricoBD(contentDTO);
-			
-			if(!contentDTO.getFcFBArticleId().equals("")){
-		 		logger.info(llamadasWSBO.deleteArticleFB(contentDTO.getFcFBArticleId()));
-			}else
-		 		logger.info("No se contaba con el articleFBId");
-			
-		}catch (LlamadasWSDAOException daoException){
-			logger.error("Exception LlamadasWSDAOException: "+daoException.getMessage());
-			throw new ProcesoWorkflowException(daoException.getMessage());
-		}catch (LlamadasWSBOException boException){
-			logger.error("Exception LlamadasWSBOException: "+boException.getMessage());
-			throw new ProcesoWorkflowException(boException.getMessage());
-		}catch (Exception e) {
-			logger.error("Exception CaducarNota: ",e);
-			throw new ProcesoWorkflowException(e.getMessage());
-		}
-		return success;
-	}
-	/**
-	 * Método que es utilizado para el proceso de revisión de una nota del portal de UNOTV,
-	 * se genera html para poder visualizarlo antes de publicar la nota.
-	 * @param ContentDTO contentDTO
-	 * @return String
-	 * @throws ProcesoWorkflowException
-	 * @author jesus
-	 * */
-	public String revisarNota(ContentDTO contentDTO) throws ProcesoWorkflowException{
-		
-		String url_revision_nota="";
-		try {
-			ParametrosDTO parametrosDTO=UtilWorkFlow.obtenerPropiedades("ambiente.resources.properties");
-			String carpetaContenido=parametrosDTO.getPathFilesTest()+UtilWorkFlow.getRutaContenido(contentDTO, parametrosDTO);
-			logger.debug("carpetaContenido: "+carpetaContenido);
-			UtilWorkFlow.createFolders(carpetaContenido);
-			parametrosDTO.setBaseURL(parametrosDTO.getBaseURLTest());
-			UtilWorkFlow.createPlantilla(parametrosDTO, contentDTO, "unotv-wfs-revision");
-			url_revision_nota=parametrosDTO.getAmbiente().equalsIgnoreCase("desarrollo")?parametrosDTO.getDominio()+"/portal/test-unotv/"+UtilWorkFlow.getRutaContenido(contentDTO, parametrosDTO):
- 				"http://pruebas-unotv.tmx-internacional.net"+"/"+UtilWorkFlow.getRutaContenido(contentDTO, parametrosDTO);
-		} catch (Exception e) {
-			logger.error("Error en revisarNota: ",e);
-			throw new ProcesoWorkflowException(e.getMessage());
-		}
-		return url_revision_nota;
-	}
-	
-	/**
 	 * Método que es utilizado para el proceso de publicación de una nota del portal de UNOTV,
 	 * se inserta nota en la base de datos, se hace el llamado para el Push AMP y el insert a Facebook Instant Articles
 	 * @param ContentDTO
-	 * @return Boolean
+	 * @return String
 	 * @throws LlamadasWSDAOException, LlamadasWSBOException
 	 * @author jesus
 	 * */
@@ -132,6 +66,15 @@ public class ProcesoWorkflowBO {
 			}
 			
 			llamadasWSDAO.setNotaBD(contentDTO);
+			
+			
+			if(contentDTO.getFcTagsApp() != null && contentDTO.getFcTagsApp().length>0){
+				String id_contenido=llamadasWSDAO.getIdNotaByName(contentDTO.getFcNombre());
+				if(!id_contenido.equals("")){
+					llamadasWSDAO.insertTagsApp(id_contenido, contentDTO.getFcTagsApp());
+				}
+			}
+			
 			String carpetaContenido=parametrosDTO.getPathFiles()+UtilWorkFlow.getRutaContenido(contentDTO, parametrosDTO);
 			logger.debug("carpetaContenido: "+carpetaContenido);
 			UtilWorkFlow.createFolders(carpetaContenido);
@@ -170,6 +113,78 @@ public class ProcesoWorkflowBO {
 			}
 		return id_facebook;
 	}
+	
+	/**
+	 * Método que es utilizado para el proceso de revisión de una nota del portal de UNOTV,
+	 * se genera html para poder visualizarlo antes de publicar la nota.
+	 * @param ContentDTO contentDTO
+	 * @return String
+	 * @throws ProcesoWorkflowException
+	 * @author jesus
+	 * */
+	public String revisarNota(ContentDTO contentDTO) throws ProcesoWorkflowException{
+		
+		String url_revision_nota="";
+		try {
+			ParametrosDTO parametrosDTO=UtilWorkFlow.obtenerPropiedades("ambiente.resources.properties");
+			String carpetaContenido=parametrosDTO.getPathFilesTest()+UtilWorkFlow.getRutaContenido(contentDTO, parametrosDTO);
+			logger.debug("carpetaContenido: "+carpetaContenido);
+			UtilWorkFlow.createFolders(carpetaContenido);
+			parametrosDTO.setBaseURL(parametrosDTO.getBaseURLTest());
+			UtilWorkFlow.createPlantilla(parametrosDTO, contentDTO, "unotv-wfs-revision");
+			url_revision_nota=parametrosDTO.getAmbiente().equalsIgnoreCase("desarrollo")?parametrosDTO.getDominio()+"/portal/test-unotv/"+UtilWorkFlow.getRutaContenido(contentDTO, parametrosDTO):
+ 				"http://pruebas-unotv.tmx-internacional.net"+"/"+UtilWorkFlow.getRutaContenido(contentDTO, parametrosDTO);
+		} catch (Exception e) {
+			logger.error("Error en revisarNota: ",e);
+			throw new ProcesoWorkflowException(e.getMessage());
+		}
+		return url_revision_nota;
+	}
+	
+	
+	
+	/**
+	 * Método que es utilizado para el proceso de caducación de una nota del portal de UNOTV,
+	 * se elimina nota de la base de datos y de Facebook Instant Articles
+	 * @param ContentDTO
+	 * @return Boolean
+	 * @throws LlamadasWSDAOException, LlamadasWSBOException, ProcesoWorkflowException
+	 * @author jesus
+	 * */
+	public Boolean caducarNota(ContentDTO contentDTO) throws ProcesoWorkflowException{
+		
+		boolean success=false;
+		try {
+			ParametrosDTO parametrosDTO=UtilWorkFlow.obtenerPropiedades("ambiente.resources.properties");
+			LlamadasWSDAO LlamadasWSDAO=new LlamadasWSDAO(parametrosDTO.getURL_WS_DATOS());
+			LlamadasWSBO llamadasWSBO=new LlamadasWSBO(parametrosDTO.getURL_WS_FB()); //kaka
+
+			if(contentDTO.getFcTagsApp() != null && contentDTO.getFcTagsApp().length>0){
+				success = LlamadasWSDAO.deleteTagsApp(contentDTO);
+			}
+			success = LlamadasWSDAO.deleteNotaBD(contentDTO);
+			success = LlamadasWSDAO.deleteNotaHistoricoBD(contentDTO);
+			
+			if(!contentDTO.getFcFBArticleId().equals("")){
+		 		logger.info(llamadasWSBO.deleteArticleFB(contentDTO.getFcFBArticleId()));
+			}else
+		 		logger.info("No se contaba con el articleFBId");
+			
+		}catch (LlamadasWSDAOException daoException){
+			logger.error("Exception LlamadasWSDAOException: "+daoException.getMessage());
+			throw new ProcesoWorkflowException(daoException.getMessage());
+		}catch (LlamadasWSBOException boException){
+			logger.error("Exception LlamadasWSBOException: "+boException.getMessage());
+			throw new ProcesoWorkflowException(boException.getMessage());
+		}catch (Exception e) {
+			logger.error("Exception CaducarNota: ",e);
+			throw new ProcesoWorkflowException(e.getMessage());
+		}
+		return success;
+	}
+	
+	
+	
 	
 }// FIN CLASE
 

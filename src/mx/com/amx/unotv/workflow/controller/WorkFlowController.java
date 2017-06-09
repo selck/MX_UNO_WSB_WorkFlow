@@ -1,6 +1,7 @@
 package mx.com.amx.unotv.workflow.controller;
 
 import mx.com.amx.unotv.workflow.bo.ProcesoWorkflowBO;
+import mx.com.amx.unotv.workflow.bo.exception.LlamadasWSDAOException;
 import mx.com.amx.unotv.workflow.dto.ContentDTO;
 
 import org.apache.log4j.Logger;
@@ -21,10 +22,13 @@ public class WorkFlowController {
 	private ProcesoWorkflowBO procesoWorkflowBO;
 	
 	
+	
 	/**
-	 * 
-	 * 
-	 * 
+	 * Método que es utilizado para llamar al BO encargado de realizar la lógica de 
+	 * la publicación de una nota en el portal de UNOTV
+	 * @param ContentDTO
+	 * @return String
+	 * @author jesus
 	 * */
 	@RequestMapping(value={"publicarNota"}, method={org.springframework.web.bind.annotation.RequestMethod.POST}, headers={"Accept=application/json"})
 	@ResponseBody
@@ -42,6 +46,37 @@ public class WorkFlowController {
 		return resultado;
 	}
 	
+	/**
+	 * 
+	 * Método que es utilizado para llamar al BO encargado de realizar la lógica del
+	 * proceso de revisión de una nota en el portal de UNOTV
+	 * @param ContentDTO
+	 * @return String
+	 * @author jesus
+	 * */
+	@RequestMapping(value={"revisarNota"}, method={org.springframework.web.bind.annotation.RequestMethod.POST}, headers={"Accept=application/json"})
+	@ResponseBody
+	public String revisarNota(@RequestBody ContentDTO contentDTO){
+		LOG.debug("Inicia revisarNota..");
+		
+		String resultado="";
+		try{
+			resultado = this.procesoWorkflowBO.revisarNota(contentDTO);
+		}
+		catch (Exception e){
+			LOG.error(" Error WorkFlowController [revisarNota]:"+e.getMessage());
+		}
+		return resultado;
+	}
+	
+	/**
+	 * 
+	 * Método que es utilizado para llamar al BO encargado de realizar la lógica del
+	 * proceso de caducación de de una nota en el portal de UNOTV
+	 * @param ContentDTO
+	 * @return Boolean
+	 * @author jesus
+	 * */
 	@RequestMapping(value={"caducarNota"}, method={org.springframework.web.bind.annotation.RequestMethod.POST}, headers={"Accept=application/json"})
 	@ResponseBody
 	public Boolean caducarNota(@RequestBody ContentDTO contentDTO){
@@ -57,20 +92,4 @@ public class WorkFlowController {
 		}
 		return resultado;
 	}
-	
-	@RequestMapping(value={"revisarNota"}, method={org.springframework.web.bind.annotation.RequestMethod.POST}, headers={"Accept=application/json"})
-	@ResponseBody
-	public String revisarNota(@RequestBody ContentDTO contentDTO){
-		LOG.debug("Inicia revisarNota..");
-		
-		String resultado="";
-		try{
-			resultado = this.procesoWorkflowBO.revisarNota(contentDTO);
-		}
-		catch (Exception e){
-			LOG.error(" Error WorkFlowController [revisarNota]:"+e.getMessage());
-		}
-		return resultado;
-	}
-
 }//FIN CLASE

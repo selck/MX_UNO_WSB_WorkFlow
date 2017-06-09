@@ -15,6 +15,8 @@ import java.util.Properties;
 import java.util.TimeZone;
 
 import mx.com.amx.unotv.workflow.bo.LlamadasWSDAO;
+import mx.com.amx.unotv.workflow.bo.exception.LlamadasWSDAOException;
+import mx.com.amx.unotv.workflow.bo.exception.ProcesoWorkflowException;
 import mx.com.amx.unotv.workflow.dto.ContentDTO;
 import mx.com.amx.unotv.workflow.dto.ParametrosDTO;
 import mx.com.amx.unotv.workflow.dto.RedSocialEmbedPostDTO;
@@ -29,7 +31,17 @@ import org.jsoup.nodes.Document;
 public class UtilWorkFlow {
 	private final static Logger logger = Logger.getLogger(UtilWorkFlow.class);	
 	
-	public static ParametrosDTO obtenerPropiedades(String properties) {
+	/**
+	 * Método encargado de setear todas las propiedades de un objeto de tipo ParametrosDTO
+	 * @param  String
+	 *         Es la cadena que le define de donde tomar la configuración del archivo properties,
+	 *         desarrollo o producción
+	 * @return ParametrosDTO
+	 * 		   Se regresa una instancia de tipo ParametrosDTO
+	 * @throws ProcesoWorkflowException
+	 * @author jesus
+	 * */
+	public static ParametrosDTO obtenerPropiedades(String properties) throws ProcesoWorkflowException {
 		ParametrosDTO parametrosDTO = new ParametrosDTO();		 
 		try {	    		
 			Properties propsTmp = new Properties();
@@ -74,11 +86,23 @@ public class UtilWorkFlow {
 		} catch (Exception ex) {
 			parametrosDTO = new ParametrosDTO();
 			logger.error("No se encontro el Archivo de propiedades: ", ex);			
+			throw new ProcesoWorkflowException(ex.getMessage());
 		}
 		return parametrosDTO;
     }
-	
-	public static String getRutaContenido(ContentDTO contentDTO, ParametrosDTO parametrosDTO){
+	/**
+	 * Método encargado de regresar una cadena con la definición de la ruta de la nota
+	 * en el webServer, por ejemplo: "noticias/estados/estado-de-mexico/detalle/finaliza-conteo-distrital-en-edomex-se-confirma-triunfo-de-del-mazo-202664"
+	 * @param  ContentDTO
+     *         Objeto que contiene la información necesaria para el path
+     * @param  ParametrosDTO
+     *         Objeto con información adicional para el path
+	 * @return String
+	 * 		   Se regresa el path de guardado de un contenido en el WebServer
+	 * @throws ProcesoWorkflowException
+	 * @author jesus
+	 * */
+	public static String getRutaContenido(ContentDTO contentDTO, ParametrosDTO parametrosDTO) throws ProcesoWorkflowException{
 		String rutaContenido="";
 		try {
 			String tipoSeccion="";
@@ -96,12 +120,20 @@ public class UtilWorkFlow {
 			rutaContenido = tipoSeccion + "/" + id_seccion +"/"+ id_categoria+"/"+ parametrosDTO.getPathDetalle() + "/" +contentDTO.getFcNombre();
 		
 		} catch (Exception e) {
-			logger.error("Error getPathCarpetaContenido: ",e);
+			logger.error("Error getRutaContenido: ",e);
+			throw new ProcesoWorkflowException(e.getMessage());
 		}
 		return rutaContenido;
 	}
-	
-	public static boolean createFolders(String carpetaContenido) {
+	/**
+	 * Regresa un boolean true si el directorio se pudo crear, o un false en caso contrario
+	 * @param  String
+     *         Path del directorio a ser creado
+	 * @return boolean
+	 * @throws ProcesoWorkflowException
+	 * @author jesus
+	 * */
+	public static boolean createFolders(String carpetaContenido) throws ProcesoWorkflowException {
 		boolean success = false;
 		try {						
 			File carpetas = new File(carpetaContenido) ;
@@ -112,10 +144,20 @@ public class UtilWorkFlow {
 		} catch (Exception e) {
 			success = false;
 			logger.error("Ocurrio error al crear las carpetas: ", e);
+			throw new ProcesoWorkflowException(e.getMessage());
 		} 
 		return success;
 	}
-	
+	/**
+	 * Se regresa una cadena separada por | en donde se especifica la cadena a ser reemplazada y la url de la red social
+	 * @param  String
+     *         id_red_social es el identificador de la red social a buscar, para poder reemplazar sus urls
+	 * @param  rtfContenido
+     *		   Toto el Rich Text Conten de la nota
+	 * @return String
+	 * 		   La cadena separada por |
+	 * @author jesus
+	 * */
 	private static String devuelveCadenasPost(String id_red_social, String rtfContenido){
 		String url="", cadenaAReemplazar="", salida="";
 		try {
@@ -128,7 +170,15 @@ public class UtilWorkFlow {
 		}
 		return salida;
 	}
-
+	/**
+	 * Se regresa una cadena con todo el Texto de una nota, reemplazando los valores de sus respectivas redes sociales 
+	 * que fueron inssertadas por los redactores.
+	 * @param  String
+     *         Toto el Rich Text Conten de la nota
+	 * @return String
+	 * 		  Se regresa una nueva cadena con los replace de los widgets de las redes sociales.
+	 * @author jesus
+	 * */
 	private static String getEmbedPost(String RTFContenido){
 		try {
 			String rtfContenido=RTFContenido;
@@ -277,8 +327,23 @@ public class UtilWorkFlow {
 			return RTFContenido;
 		}
 	}
-		
-	public static boolean createPlantilla(ParametrosDTO parametrosDTO, ContentDTO contentDTO, String etapaTrabajo) {
+	/**
+	 * Se encarga de generar todo el html del detalle de una nota mediante los sigueintes pasos
+	 * 1.- Se conecta hacia una plantilla prerender en el portal
+	 * 2.- Se hace un replace de los elementos par valor que se especificaron en la plantilla prerender por ejemplo :$WCM_TITULO$
+	 * 3.- Se escribe el html fisicamente en el WebServer
+	 * @param  ParametrosDTO
+     *         Objeto con la información necesaria para generar el html del detalle de la nota
+     * @param  ContentDTO
+     *         Objeto con toda la información de la nota
+	 * @param  String
+     *         Etapa de trabajo
+	 * @return boolean
+	 * 		   Se regresa un valor de true si todo el flujo se llevo a cabo de forma correcta, si no se regresa un false
+	 * @author jesus
+	 * @throws ProcesoWorkflowException 
+	 * */	
+	public static boolean createPlantilla(ParametrosDTO parametrosDTO, ContentDTO contentDTO, String etapaTrabajo) throws ProcesoWorkflowException {
 			boolean success = false;
 			Document doc = null;
 			String tipoSeccion="";
@@ -335,10 +400,24 @@ public class UtilWorkFlow {
 				}
 			} catch(Exception e) {
 				logger.error("Error al obtener HTML de Plantilla: ", e);
+				throw new ProcesoWorkflowException(e.getMessage());
 			}
 			return success;
 		}
 		
+	/**
+	 * Se encarga de generar todo el html del detalle de una nota mediante los siguientes pasos
+	 * 1.- Se conecta hacia una plantilla prerender en el portal
+	 * 2.- Se hace un replace de los elementos par valor que se especificaron en la plantilla prerender por ejemplo :$WCM_TITULO$
+	 * 3.- Se escribe el html fisicamente en el WebServer
+	 * @param  ParametrosDTO
+     *         Objeto con la información necesaria para generar el html del detalle de la nota
+     * @param  ContentDTO
+     *         Objeto con toda la información de la nota
+	 * @return String
+	 * 		   Se regresa el html de la nota en formato AMP
+	 * @author jesus
+	 * */	
 		public static String createPlantillaAMP(ParametrosDTO parametrosDTO, ContentDTO contentDTO) {
 			boolean success = false;
 			String HTML="";
@@ -359,6 +438,14 @@ public class UtilWorkFlow {
 			}
 			return HTML;
 		}
+		/**
+		 * Se lleva a cabo un encode para los caracteres especiales
+		 * @param  String
+	     *         Cadena a ser encodeada
+		 * @return String
+		 * 		   Se regresa la cadena encodeada
+		 * @author jesus
+		 * */	
 		private static String htmlEncode(final String string) {
 			  final StringBuffer stringBuffer = new StringBuffer();
 			  for (int i = 0; i < string.length(); i++) {
@@ -376,6 +463,21 @@ public class UtilWorkFlow {
 			  }
 			  return stringBuffer.toString();
 			}
+		
+		/**
+		 * Se realiza el reemplazo de de los campos fijos que se tenian en el html y se cambian
+		 * por la información real del Contenido
+		 * por ejemplo $WCM_TITULO_COMENTARIO$
+		 * @param  String
+	     *         Es la cadena de HTML
+	     * @param  ContentDTO
+	     * 		   Objeto que trae la informaición del contenido 
+	     * @param  ParametrosDTO
+	     * 		   Objeto que trae información adiconal, que es de suma importancia para generar el HTML     
+		 * @return String
+		 * 		   Se regresa el HTML con los campos reemplazados
+		 * @author jesus
+		 * */	
 		private static String reemplazaPlantilla(String HTML, ContentDTO contentDTO, ParametrosDTO parametrosDTO){
 			
 			try {
@@ -595,7 +697,20 @@ public class UtilWorkFlow {
 			//HTML = reemplazaURLPages(HTML, "/wps/portal/unotv/unotv/");
 			return HTML;
 		}
-		
+		/**
+		 * Se realiza el reemplazo de de los campos fijos que se tenian en el html y se cambian
+		 * por la información real del Contenido
+		 * por ejemplo $WCM_TITULO_COMENTARIO$
+		 * @param  String
+	     *         Es la cadena de HTML
+	     * @param  ContentDTO
+	     * 		   Objeto que trae la informaición del contenido 
+	     * @param  ParametrosDTO
+	     * 		   Objeto que trae información adiconal, que es de suma importancia para generar el HTML     
+		 * @return String
+		 * 		   Se regresa el HTML con los campos reemplazados
+		 * @author jesus
+		 * */	
 		private static String reemplazaPlantillaAMP(String HTML, ContentDTO contentDTO, ParametrosDTO parametrosDTO){
 			
 			try {
@@ -748,6 +863,15 @@ public class UtilWorkFlow {
 			
 			return HTML;
 		}
+		/**
+		 * Se realiza a cabo la lógica para poner el código adecuado de las redes sociales
+		 * que va embebido en el Rich Text Format de la nota
+		 * @param  String
+	     *         RTFContenido de la nota
+		 * @return String
+		 * 		   Se regresa una cadena con el RTF adecuado para las redes sociales
+		 * @author jesus
+		 * */	
 		private static String getEmbedPostAMP(String RTFContenido){
 			try {
 				String rtfContenido=RTFContenido;
@@ -852,7 +976,7 @@ public class UtilWorkFlow {
 						embedCode=new StringBuffer();
 						embedCode=new StringBuffer();
 						embedCode.append(" <amp-img class=\"giphy\" src=\""+url.split("\\,")[1]+"\" width=\"300\" height=\"125\" layout=\"responsive\"></amp-img> \n");
-						embedCode.append(" <span> V�a  \n");
+						embedCode.append(" <span> V&iacute;a  \n");
 						embedCode.append(" 	<a href=\""+url.split("\\,")[0]+"\" target=\"_blank\">Giphy</a> \n");
 						embedCode.append("  </span> \n");
 						
@@ -925,7 +1049,15 @@ public class UtilWorkFlow {
 				return RTFContenido;
 			}
 		}
-
+		/**
+		 * Se lleva a cabo el reemplazo del Media Content de la nota,
+		 * puede ser solo reemplazo de la imagen principal o del vide.
+		 * @param  ContentDTO
+	     *         Instancia con la información necesaria para reemplazar
+		 * @return String
+		 * 		   Se devuelve una cadena con el Media Content
+		 * @author jesus
+		 * */	
 		private static String getMediaContentAMP(ContentDTO dto){
 			String media="";
 			if(!dto.getFcIdVideoOoyala().trim().equals("") || !dto.getFcIdVideoYouTube().trim().equals("") || !dto.getFcIdPlayerOoyala().trim().equals("")){
@@ -935,6 +1067,15 @@ public class UtilWorkFlow {
 			}
 			return media;
 		}
+		/**
+		 * Se lleva a cabo el reemplazo del Media Content de la nota,
+		 * de tipo video, se valida si es youtube u ooyala
+		 * @param  ContentDTO
+	     *         Instancia con la información necesaria para reemplazar
+		 * @return String
+		 * 		   Se devuelve una cadena con el Media Content de tipo Video
+		 * @author jesus
+		 * */	
 		private static String getVideoAMP(ContentDTO dto) {
 			
 			StringBuffer mediaContent = new StringBuffer();
@@ -952,6 +1093,14 @@ public class UtilWorkFlow {
 			}
 			return mediaContent.toString();
 		}
+		/**
+		 * Se genera el HTML de la galeria
+		 * @param  ContentDTO
+	     *         Instancia con la información necesaria para reemplazar
+		 * @return String
+		 * 		   Se devuelve el HTML dela galeria
+		 * @author jesus
+		 * */	
 		private static String getGaleriaAMP(ContentDTO dto) {
 			StringBuffer mediaImage = new StringBuffer("");
 			String galeria = dto.getClGaleriaImagenes() == null?"":dto.getClGaleriaImagenes();
@@ -975,6 +1124,15 @@ public class UtilWorkFlow {
 			}
 			return mediaImage.toString();
 		}
+		/**
+		 * Se lleva a cabo el reemplazo del Media Content de la nota,
+		 * de tipo imagen
+		 * @param  ContentDTO
+	     *         Instancia con la información necesaria para reemplazar
+		 * @return String
+		 * 		   Se devuelve una cadena con el Media Content de tipo imagen
+		 * @author jesus
+		 * */
 		private static String getImagenAMP(ContentDTO dto) {
 			StringBuffer mediaImage = new StringBuffer("");
 			String imgPrincipal = dto.getFcImgPrincipal() == null?"":dto.getFcImgPrincipal();
@@ -1032,8 +1190,14 @@ public class UtilWorkFlow {
 		}*/
 		
 		/**
-		 * 
-		 * */
+		 * Se lleva a cabo el reemplazo del Media Content de la nota,
+		 * puede ser solo reemplazo de la imagen principal o del vide.
+		 * @param  ContentDTO
+	     *         Instancia con la información necesaria para reemplazar
+		 * @return String
+		 * 		   Se devuelve una cadena con el Media Content
+		 * @author jesus
+		 * */	
 		private static String getMediaContent(ContentDTO dto, ParametrosDTO parametrosDTO){
 			String media="";
 			if(!dto.getFcIdVideoOoyala().trim().equals("") || !dto.getFcIdVideoYouTube().trim().equals("") || !dto.getFcIdPlayerOoyala().trim().equals("")){
@@ -1044,8 +1208,16 @@ public class UtilWorkFlow {
 			return media;
 		}
 		
+
 		/**
-		 * 
+		 * Se lleva a cabo el reemplazo del Media Content de la nota,
+		 * de tipo imagen, se valida si la nota es de tipo galería,
+		 * infografia o default
+		 * @param  ContentDTO
+	     *         Instancia con la información necesaria para reemplazar
+		 * @return String
+		 * 		   Se devuelve una cadena con el Media Content de tipo imagen
+		 * @author jesus
 		 * */
 		private static String getImagen(ContentDTO dto) {
 			StringBuffer mediaImage = new StringBuffer("");
@@ -1069,7 +1241,15 @@ public class UtilWorkFlow {
 			  return mediaImage.toString();
 		}
 		
-			
+		/**
+		 * Se lleva a cabo el reemplazo del Media Content de la nota,
+		 * de tipo video, se valida si es youtube u ooyala
+		 * @param  ContentDTO
+	     *         Instancia con la información necesaria para reemplazar
+		 * @return String
+		 * 		   Se devuelve una cadena con el Media Content de tipo Video
+		 * @author jesus
+		 * */		
 		private static String getVideo(ContentDTO dto) {
 			
 			StringBuffer mediaContent = new StringBuffer();
@@ -1118,7 +1298,15 @@ public class UtilWorkFlow {
 			}
 			return mediaContent.toString();
 		}		
-
+		/**
+		 * Se escribe fisicamente un archivo de tipo HTML
+		 * @param  String
+	     *         Path del directorio donde se va a guardar el HTML
+		 * @param String
+		 * 		   Código HTML
+		 * @return boolean
+		 * @author jesus
+		 * */
 		public static boolean writeHTML(String rutaHMTL, String HTML) {
 			boolean success = false;
 			try {
@@ -1149,6 +1337,13 @@ public class UtilWorkFlow {
 			return success;
 		}
 		
+		/**
+		 * Se hace una llamada aun shell, para la transferencia de archivos entre servidores
+		 * @param  ParametrosDTO
+	     *         Objeto de tipo ParametrosDTO con la información necesaria para hacer la transferencia
+		 * @return boolean
+		 * @author jesus
+		 * */
 		private static boolean transfiereWebServer(ParametrosDTO parametros) {
 			logger.debug("transfiereWebServer");
 			boolean success = false;
@@ -1173,6 +1368,11 @@ public class UtilWorkFlow {
 		
 		/**
 		 * Metodo que remplaza los metas de una nota
+		 * @param  HTML
+	     * @param  ContentDTO
+	     * @param  ParametrosDTO      
+		 * @return boolean
+		 * @author jesus
 		 * */
 		private static String remplazaMetas(String HTML, ContentDTO contentDTO, ParametrosDTO parametrosDTO){
 			TimeZone tz = TimeZone.getTimeZone("America/Mexico_City");
@@ -1334,6 +1534,12 @@ public class UtilWorkFlow {
 			return HTML;
 		}
 		
+		/**
+		 * Metodo que cambia caracteres especiales por caracteres en código HTML
+		 * @param  String     
+		 * @return String
+		 * @author jesus
+		 * */
 		private static String cambiaCaracteres(String texto) {
 			
 			texto = texto.replaceAll("á", "&#225;");

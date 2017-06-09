@@ -8,15 +8,28 @@ import java.net.URL;
 import java.net.URLConnection;
 
 
-import mx.com.amx.unotv.workflow.dto.ParametrosDTO;
+
+
+import mx.com.amx.unotv.workflow.bo.exception.LlamadasWSDAOException;
+import mx.com.amx.unotv.workflow.bo.exception.ProcesoWorkflowException;
 
 import org.apache.log4j.Logger;
 
 public class ReadHTMLWebServer {
 	
 	static Logger logger=Logger.getLogger(ReadHTMLWebServer.class);
-	
-	public String getResourceWebServer(String url_a_conectar){
+	/**
+	 * Método que te permite descargar un archivo drectamente del WebServer
+	 * @param  String
+     *         url_a_conectar es la dirección a la cual se va a conectar para descargar el 
+     *         archivo.
+	 * @return String
+	 * 		   Se regresa todo el archivo en formato cadena, por ejemplo todo el contenido de 
+	 *         un html, o todo el contenido de un css	
+	 * @throws LlamadasWSDAOException
+	 * @author jesus
+	 * */
+	public String getResourceWebServer(String url_a_conectar) throws ProcesoWorkflowException{
 		URL url;
 		StringBuffer HTML=new StringBuffer();
 		try {
@@ -33,9 +46,12 @@ public class ReadHTMLWebServer {
 			}
 			br.close();
 		} catch (MalformedURLException e) {
-			logger.error("Error getHTML_DetailAMP MalformedURLException: ",e);
+			logger.error("Error getResourceWebServer MalformedURLException: ",e);
 		} catch (IOException e) {
-			logger.error("Error getHTML_DetailAMP IOException: ",e);
+			logger.error("Error getResourceWebServer IOException: ",e);
+		} catch (Exception e) {
+			logger.error("Error getResourceWebServer: ",e);
+			throw new ProcesoWorkflowException(e.getMessage());
 		}
 		return HTML.toString();
 	}
